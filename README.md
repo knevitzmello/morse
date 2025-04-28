@@ -16,6 +16,7 @@ O programa também reproduz sons para cada ponto e traço usando a biblioteca **
 - Tradução de código Morse em tempo real.
 - Sons distintos para ponto e traço.
 - Exibição contínua da mensagem decodificada.
+- Edição do tempo de timeout
 - Botão **"Limpar Mensagem"** para reiniciar a digitação.
 
 ---
@@ -25,7 +26,7 @@ O programa também reproduz sons para cada ponto e traço usando a biblioteca **
 - Bibliotecas Python:
   - `numpy`
   - `simpleaudio`
-  - `tkinter` (normalmente já incluído no Python)
+  - `tkinter`
 
 ### Instalação das dependências
 ```bash
