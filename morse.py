@@ -5,7 +5,6 @@ import tkinter as tk
 import queue
 import numpy as np
 
-# Dicionário de código Morse
 MORSE_CODE_DICT = {
     '.-': 'A',    '-...': 'B',  '-.-.': 'C',  '-..': 'D',   '.': 'E',
     '..-.': 'F',  '--.': 'G',   '....': 'H',  '..': 'I',    '.---': 'J',
@@ -18,20 +17,19 @@ MORSE_CODE_DICT = {
 }
 
 # Configurações
-LETTER_TIMEOUT = 1.0  # segundos sem input para considerar fim de letra
-DOT_TONE_DURATION = 0.1  # duração do som do ponto
-DASH_TONE_DURATION = 0.2  # duração do som do traço
-FREQ_DOT = 600        # frequência para ponto
-FREQ_DASH = 600       # frequência para traço
+LETTER_TIMEOUT = 0.5  # segundos
+DOT_TONE_DURATION = 0.1
+DASH_TONE_DURATION = 0.2
+FREQ_DOT = 600
+FREQ_DASH = 600
 
 current_sequence = ''
 last_input_time = time.time()
+mensagem = ''  
 lock = threading.Lock()
 
-# Fila para sons
 sound_queue = queue.Queue()
 
-# Função para gerar e tocar o som
 def play_tone(freq, duration):
     sample_rate = 44100
     t = np.linspace(0, duration, int(sample_rate * duration), False)
@@ -40,28 +38,31 @@ def play_tone(freq, duration):
     play_obj = sa.play_buffer(audio, 1, 2, sample_rate)
     play_obj.wait_done()
 
-# Worker que toca os sons na ordem
 def sound_player():
     while True:
         freq, duration = sound_queue.get()
         play_tone(freq, duration)
         sound_queue.task_done()
 
-# Função para verificar fim de letra
-def monitor_timeout(output_label):
-    global current_sequence, last_input_time
+def monitor_timeout(output_label, message_label):
+    global current_sequence, last_input_time, mensagem
     while True:
         time.sleep(0.1)
         if time.time() - last_input_time > LETTER_TIMEOUT and current_sequence:
             with lock:
                 letra = MORSE_CODE_DICT.get(current_sequence, '?')
                 print(f"{current_sequence} -> {letra}")
+                mensagem += letra
                 current_sequence = ''
                 output_label.after(0, lambda: output_label.config(text=f"Última letra: {letra}"))
+                message_label.after(0, lambda: message_label.config(text=f"Mensagem: {mensagem}"))
 
-# Evento de clique no Tkinter
 def on_click(event, output_label):
     global current_sequence, last_input_time
+
+    if event.widget != event.widget.winfo_toplevel():
+        return
+
     with lock:
         if event.num == 1:  # Botão esquerdo
             current_sequence += '.'
@@ -72,28 +73,40 @@ def on_click(event, output_label):
         last_input_time = time.time()
         output_label.config(text=f"Sequência: {current_sequence}")
 
-# Criação da janela
+
+def limpar_mensagem(message_label, output_label):
+    global mensagem
+    with lock:
+        mensagem = ''
+        message_label.config(text="Mensagem: (vazia)")
+        output_label.config(text="Esperando...")
+
 def main():
     root = tk.Tk()
     root.title("Morse Translator")
-    root.geometry("400x300")
+    root.geometry("400x350")
     root.configure(bg="black")
 
-    title = tk.Label(root, text="Clique aqui:\nEsquerdo = ponto, Direito = traço",
+    title = tk.Label(root, text="Clique na janela para escrever:\nEsquerdo = ponto, Direito = traço",
                      font=("Arial", 14), bg="black", fg="white")
-    title.pack(pady=20)
+    title.pack(pady=10)
 
     output_label = tk.Label(root, text="Esperando...", font=("Arial", 16), bg="black", fg="cyan")
-    output_label.pack(pady=20)
+    output_label.pack(pady=10)
 
-    root.bind("<Button-1>", lambda e: on_click(e, output_label))  # Botão esquerdo
-    root.bind("<Button-3>", lambda e: on_click(e, output_label))  # Botão direito
+    message_label = tk.Label(root, text="Mensagem: (vazia)", font=("Arial", 16), bg="black", fg="lime")
+    message_label.pack(pady=10)
 
-    # Thread para tocar os sons da fila
+    clear_button = tk.Button(root, text="Limpar Mensagem", font=("Arial", 12),
+                              command=lambda: limpar_mensagem(message_label, output_label),
+                              bg="red", fg="white")
+    clear_button.pack(pady=10)
+
+    root.bind("<Button-1>", lambda e: on_click(e, output_label))
+    root.bind("<Button-3>", lambda e: on_click(e, output_label))
+
     threading.Thread(target=sound_player, daemon=True).start()
-
-    # Thread para monitorar timeout
-    threading.Thread(target=monitor_timeout, args=(output_label,), daemon=True).start()
+    threading.Thread(target=monitor_timeout, args=(output_label, message_label), daemon=True).start()
 
     root.mainloop()
 
