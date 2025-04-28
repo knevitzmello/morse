@@ -1,6 +1,5 @@
-# Morse Translator em Python
+# Tradutor morse em python
 
-## Descrição
 Este é um tradutor de código Morse feito com Python usando uma interface gráfica (Tkinter).
 
 O usuário pode clicar na janela para construir uma sequência em Morse:
