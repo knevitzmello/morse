@@ -18,6 +18,7 @@ O programa também reproduz sons para cada ponto e traço usando a biblioteca **
 - Exibição contínua da mensagem decodificada.
 - Edição do tempo de timeout
 - Botão **"Limpar Mensagem"** para reiniciar a digitação.
+- Tradução para morse de texto inserido
 
 ---
 
