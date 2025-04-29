@@ -28,6 +28,7 @@ FREQ_DASH = 600
 current_sequence = ''
 last_input_time = time.time()
 lock = threading.Lock()
+clear = False
 
 sound_queue = queue.Queue()
 
@@ -61,10 +62,12 @@ def sound_player():
         sound_queue.task_done()
 
 def monitor_timeout(output_label, message_label):
-    global current_sequence, last_input_time
+    global current_sequence, last_input_time, clear
     message = ''
     while True:
         time.sleep(0.1)
+        if clear:
+            message = ''
         if time.time() - last_input_time > LETTER_TIMEOUT and current_sequence:
             with lock:
                 letra = MORSE_CODE_DICT.get(current_sequence, '?')
@@ -90,7 +93,13 @@ def on_click(event, output_label):
         output_label.config(text=f"Sequência: {current_sequence}")
 
 def clear_message(message_label):
-    message_label.config(text="Mensagem: ")
+    global clear
+    clear = True
+    time.sleep(0.3)
+    clear = False
+    message = ''
+    with lock:
+        message_label.after(0, lambda: message_label.config(text=f"Mensagem: {message}"))
 
 def text_to_morse(text):
     result = []
@@ -166,9 +175,6 @@ def main():
 
     play_button = tk.Button(root, text="Play", command=lambda: start_playback(text_entry))
     play_button.pack(pady=5)
-
-    pause_button = tk.Button(root, text="Pause", command=pause_playback)
-    pause_button.pack(pady=5)
 
     stop_button = tk.Button(root, text="Stop", command=stop_playback)
     stop_button.pack(pady=5)
